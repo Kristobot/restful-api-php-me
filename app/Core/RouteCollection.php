@@ -19,16 +19,13 @@ class RouteCollection
   public function getParams(string $uri, Route $route){
     $route_uri = $route->getUri();
 
-        if(strpos($route_uri, '{') !== false){
-          $route_uri = preg_replace('#{[a-zA-Z]+}#', '([a-zA-Z0-9])', $route_uri);
-        }
-        
+    $route_uri = static::transformUri($route_uri);      
 
-        if (preg_match("#^$route_uri$#", $uri, $matches)) {
-          $params = array_slice($matches, 1);
+    if (preg_match("#^$route_uri$#", $uri, $matches)) {
+      $params = array_slice($matches, 1);
 
-          return $params;
-        }
+      return $params;
+    }
   }
 
   public function getRouteByUri(string $uri): ?Route
@@ -36,10 +33,12 @@ class RouteCollection
     foreach ($this->routes as $route) {
         $route_uri = $route->getUri();
 
-        if(strpos($route_uri, '{') !== false){
-          $route_uri = preg_replace('#{[a-zA-Z]+}#', '([a-zA-Z0-9])', $route_uri);
+
+        if($route->getMethodHttp() !== $_SERVER['REQUEST_METHOD']){
+          continue;
         }
         
+        $route_uri = static::transformUri($route_uri);
 
         if (preg_match("#^$route_uri$#", $uri)) {
 
@@ -48,5 +47,15 @@ class RouteCollection
     }
 
     return null;
+  }
+
+  private static function transformUri($uri): string
+  {
+    if(strpos($uri, '{') !== false){
+      $uriTransform = preg_replace('#{[a-zA-Z]+}#', '([0-9]+)', $uri);
+      return $uriTransform;
+    }
+
+    return $uri;
   }
 }
